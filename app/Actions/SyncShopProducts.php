@@ -8,6 +8,10 @@ use Illuminate\Support\Carbon;
 
 class SyncShopProducts
 {
+    public function __construct(
+        private readonly RecomputeShopRecommendations $recompute,
+    ) {}
+
     /**
      * @param  list<array{external_id: string, sku?: string|null, name: string, price: string}>  $products
      * @return array{synced: int, accepted: list<string>, rejected: list<array{external_id: string, code: string, message: string}>}
@@ -32,7 +36,6 @@ class SyncShopProducts
 
             $now = Carbon::now();
 
-            // Stub engine until B6: recommended_price copies the synced store price.
             Product::query()->updateOrCreate(
                 [
                     'shop_id' => $shop->id,
@@ -44,14 +47,14 @@ class SyncShopProducts
                     'price' => $item['price'],
                     'currency' => $currency,
                     'last_synced_at' => $now,
-                    'recommended_price' => $item['price'],
-                    'below_floor' => false,
-                    'floor_price' => null,
-                    'recommendation_updated_at' => $now,
                 ],
             );
 
             $accepted[] = $externalId;
+        }
+
+        if ($accepted !== []) {
+            $this->recompute->handle($shop);
         }
 
         return [

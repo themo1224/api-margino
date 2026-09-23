@@ -31,15 +31,29 @@ class ProductFactory extends Factory
             'recommendation_updated_at' => now(),
             'last_synced_at' => now(),
             'last_applied_price' => null,
+            'direct_cost' => null,
+            'min_margin_percent' => null,
+            'max_price' => null,
         ];
     }
 
     /**
-     * Fixture for WP 1.8 floor-refuse tests before the B6 engine exists.
+     * Set a direct COGS for engine tests.
+     */
+    public function withDirectCost(string $cost = '100000'): static
+    {
+        return $this->state(fn (array $attributes): array => [
+            'direct_cost' => $cost,
+        ]);
+    }
+
+    /**
+     * Fixture for WP 1.8 floor-refuse tests (store price below a known floor).
      */
     public function belowFloor(): static
     {
         return $this->state(fn (array $attributes): array => [
+            'price' => '1000000',
             'below_floor' => true,
             'floor_price' => '2000000',
             'recommended_price' => '2000000',

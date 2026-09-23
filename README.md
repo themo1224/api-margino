@@ -43,4 +43,16 @@ curl -X POST http://localhost:8000/v1/connector/products/42/applied \
   -d '{"applied_price":"1500000","currency":"IRR","source":"manual","applied_at":"2026-09-07T12:05:00Z"}'
 ```
 
-Recommendations after sync are a **stub** (`recommended_price` = synced price). The real floor-aware engine is backend phase B6.
+Recommendations after sync use the **B6 floor-aware engine** when the shop has a `shop_cost_profiles` row (seeded for local). Strategy is `floor_plus_margin` (recommended = effective floor) until rivals (B7).
+
+Without a cost profile:
+- `local` / `testing`: B4 stub (`recommended_price` = synced price) unless `CONNECTOR_STUB_RECOMMENDATIONS=false`
+- `production`: stub off by default — no recommendation until costs exist
+
+Cost entry UI is backend phase **B8**. Until then, set costs via seeder / Eloquent / tinker, then re-sync (or call `RecomputeShopRecommendations`).
+
+Optional `.env`:
+
+```
+CONNECTOR_STUB_RECOMMENDATIONS=false
+```

@@ -8,6 +8,7 @@ use App\Enums\ShopStatus;
 use App\Models\ApiKey;
 use App\Models\Plan;
 use App\Models\Shop;
+use App\Models\ShopCostProfile;
 use Illuminate\Database\Seeder;
 
 class ConnectorSeeder extends Seeder
@@ -73,6 +74,18 @@ class ConnectorSeeder extends Seeder
                 'name' => 'Local development key',
                 'key_hash' => $hasher->hash($plainKey),
                 'revoked_at' => null,
+            ],
+        );
+
+        ShopCostProfile::query()->updateOrCreate(
+            ['shop_id' => $shop->id],
+            [
+                'staff_cost' => '2000000',
+                'rent_cost' => '1000000',
+                'utilities_cost' => '500000',
+                'other_overhead' => '500000',
+                'min_margin_percent' => '20',
+                'allocation_method' => 'equal_split',
             ],
         );
     }

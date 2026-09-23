@@ -24,6 +24,9 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $recommendation_updated_at
  * @property Carbon|null $last_synced_at
  * @property string|null $last_applied_price
+ * @property string|null $direct_cost
+ * @property string|null $min_margin_percent
+ * @property string|null $max_price
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Shop $shop
@@ -41,6 +44,9 @@ use Illuminate\Support\Carbon;
     'recommendation_updated_at',
     'last_synced_at',
     'last_applied_price',
+    'direct_cost',
+    'min_margin_percent',
+    'max_price',
 ])]
 class Product extends Model
 {

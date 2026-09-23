@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -21,6 +22,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Plan $plan
+ * @property-read ShopCostProfile|null $costProfile
  */
 #[Fillable(['public_id', 'name', 'status', 'plan_id'])]
 class Shop extends Model
@@ -55,6 +57,14 @@ class Shop extends Model
     public function plan(): BelongsTo
     {
         return $this->belongsTo(Plan::class);
+    }
+
+    /**
+     * @return HasOne<ShopCostProfile, $this>
+     */
+    public function costProfile(): HasOne
+    {
+        return $this->hasOne(ShopCostProfile::class);
     }
 
     /**
