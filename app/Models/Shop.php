@@ -15,16 +15,18 @@ use Illuminate\Support\Str;
 
 /**
  * @property int $id
+ * @property int|null $user_id
  * @property string $public_id
  * @property string $name
  * @property ShopStatus $status
  * @property int $plan_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read User|null $user
  * @property-read Plan $plan
  * @property-read ShopCostProfile|null $costProfile
  */
-#[Fillable(['public_id', 'name', 'status', 'plan_id'])]
+#[Fillable(['user_id', 'public_id', 'name', 'status', 'plan_id'])]
 class Shop extends Model
 {
     /** @use HasFactory<ShopFactory> */
@@ -49,6 +51,14 @@ class Shop extends Model
 
             $shop->public_id = 'shop_'.strtolower((string) Str::ulid());
         });
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 
     /**
