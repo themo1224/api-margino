@@ -23,6 +23,8 @@ class ProductFactory extends Factory
             'external_id' => (string) fake()->unique()->numberBetween(1, 999999),
             'sku' => fake()->optional()->bothify('SKU-###'),
             'name' => fake()->words(3, true),
+            'brand' => null,
+            'barcode' => null,
             'price' => $price,
             'currency' => 'IRR',
             'recommended_price' => $price,
@@ -34,6 +36,8 @@ class ProductFactory extends Factory
             'direct_cost' => null,
             'min_margin_percent' => null,
             'max_price' => null,
+            'rivals_stale' => true,
+            'cannot_match_profitably' => false,
         ];
     }
 

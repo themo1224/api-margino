@@ -5,6 +5,11 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 type Props = {
     shop: { id: string; name: string };
     plan: { code: string; label: string; status: string };
+    license: {
+        source: string;
+        status: string;
+        ends_at: string | null;
+    } | null;
     empty: { no_key: boolean; no_products: boolean; no_cost: boolean };
     stats: {
         product_count: number;
@@ -16,6 +21,7 @@ type Props = {
 export default function DashboardIndex({
     shop,
     plan,
+    license,
     empty,
     stats,
 }: Props): ReactNode {
@@ -28,6 +34,15 @@ export default function DashboardIndex({
                 <p>
                     پلن: <strong>{plan.label}</strong> ({plan.status})
                 </p>
+                {license && (
+                    <p>
+                        لایسنس {license.source}:{' '}
+                        <strong>{license.status}</strong>
+                        {license.ends_at
+                            ? ` تا ${new Date(license.ends_at).toLocaleDateString('fa-IR')}`
+                            : ''}
+                    </p>
+                )}
             </div>
 
             {(empty.no_key || empty.no_cost || empty.no_products) && (

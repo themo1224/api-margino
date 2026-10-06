@@ -71,3 +71,43 @@ it('does not allow revoking another shops key', function () {
 
     expect($foreignKey->fresh()->revoked_at)->toBeNull();
 });
+
+it('lists api keys for the authenticated shop', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->forUser($user)->create();
+    ApiKey::factory()->for($shop)->create(['name' => 'کلید اصلی']);
+
+    $this->actingAs($user)
+        ->get(route('dashboard.api-keys'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('dashboard/api-keys')
+            ->has('keys', 1)
+            ->where('keys.0.name', 'کلید اصلی')
+            ->where('keys.0.is_active', true)
+            ->where('revealedKey', null)
+            ->missing('keys.0.key_hash')
+            ->missing('keys.0.plaintext'));
+});
+
+it('requires auth to issue an api key', function () {
+    $this->post(route('dashboard.api-keys.store'), [
+        'name' => 'کلید',
+    ])->assertRedirect(route('login'));
+});
+
+it('does not list another shops keys', function () {
+    $user = User::factory()->create();
+    $shop = Shop::factory()->forUser($user)->create();
+    ApiKey::factory()->for($shop)->create(['name' => 'کلید من']);
+
+    $otherShop = Shop::factory()->create();
+    ApiKey::factory()->for($otherShop)->create(['name' => 'کلید دیگران']);
+
+    $this->actingAs($user)
+        ->get(route('dashboard.api-keys'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->has('keys', 1)
+            ->where('keys.0.name', 'کلید من'));
+});

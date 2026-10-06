@@ -115,3 +115,19 @@ it('returns 403 when the plan is inactive', function () {
         ->assertForbidden()
         ->assertJsonPath('error.code', 'plan_inactive');
 });
+
+it('returns 403 when the shop is inactive', function () {
+    [$shop, $plainKey] = connectorShop(
+        fn () => Shop::factory()->inactive()->create(),
+    );
+    Product::factory()->for($shop)->create(['external_id' => '42']);
+
+    $this->postJson('/v1/connector/products/42/applied', [
+        'applied_price' => '1450000',
+        'currency' => 'IRR',
+        'source' => 'manual',
+        'applied_at' => '2026-09-07T12:05:00Z',
+    ], connectorHeaders($shop, $plainKey))
+        ->assertForbidden()
+        ->assertJsonPath('error.code', 'plan_inactive');
+});

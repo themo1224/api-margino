@@ -1,6 +1,11 @@
 <?php
 
+use App\Enums\PlanStatus;
+use App\Models\ApiKey;
+use App\Models\Plan;
 use App\Models\Product;
+use App\Models\Shop;
+use Illuminate\Support\Str;
 
 it('creates products and returns accepted ids', function () {
     [$shop, $plainKey] = connectorShop();
@@ -153,4 +158,99 @@ it('returns 401 when the API key is missing', function () {
     ])
         ->assertUnauthorized()
         ->assertJsonPath('error.code', 'invalid_api_key');
+});
+
+it('returns 401 when the API key is revoked', function () {
+    $plainKey = 'test_'.Str::random(40);
+    $shop = Shop::factory()->create();
+    ApiKey::factory()->for($shop)->plaintext($plainKey)->revoked()->create();
+
+    $this->postJson('/v1/connector/products/sync', [
+        'currency' => 'IRR',
+        'products' => [],
+    ], connectorHeaders($shop, $plainKey))
+        ->assertUnauthorized()
+        ->assertJsonPath('error.code', 'invalid_api_key');
+});
+
+it('returns 403 when the plan is inactive', function (PlanStatus $status) {
+    $plan = Plan::factory()->state(['status' => $status])->create();
+    [$shop, $plainKey] = connectorShop(fn () => Shop::factory()->for($plan)->create());
+
+    $this->postJson('/v1/connector/products/sync', [
+        'currency' => 'IRR',
+        'products' => [],
+    ], connectorHeaders($shop, $plainKey))
+        ->assertForbidden()
+        ->assertJsonPath('error.code', 'plan_inactive');
+})->with([
+    'inactive' => PlanStatus::Inactive,
+    'past_due' => PlanStatus::PastDue,
+]);
+
+it('returns 403 when the shop is inactive', function () {
+    [$shop, $plainKey] = connectorShop(
+        fn () => Shop::factory()->inactive()->create(),
+    );
+
+    $this->postJson('/v1/connector/products/sync', [
+        'currency' => 'IRR',
+        'products' => [],
+    ], connectorHeaders($shop, $plainKey))
+        ->assertForbidden()
+        ->assertJsonPath('error.code', 'plan_inactive');
+});
+
+it('returns 422 when products batch exceeds connector.sync_batch_max', function () {
+    config(['connector.sync_batch_max' => 1]);
+    [$shop, $plainKey] = connectorShop();
+
+    $this->postJson('/v1/connector/products/sync', [
+        'currency' => 'IRR',
+        'products' => [
+            ['external_id' => '1', 'name' => 'One', 'price' => '1000'],
+            ['external_id' => '2', 'name' => 'Two', 'price' => '2000'],
+        ],
+    ], connectorHeaders($shop, $plainKey))
+        ->assertUnprocessable()
+        ->assertJsonPath('error.code', 'validation_error');
+});
+
+it('returns 422 when a product is missing required fields', function () {
+    [$shop, $plainKey] = connectorShop();
+
+    $this->postJson('/v1/connector/products/sync', [
+        'currency' => 'IRR',
+        'products' => [
+            ['external_id' => '42', 'price' => '1500000'],
+        ],
+    ], connectorHeaders($shop, $plainKey))
+        ->assertUnprocessable()
+        ->assertJsonPath('error.code', 'validation_error');
+});
+
+it('accepts and stores optional brand and barcode', function () {
+    [$shop, $plainKey] = connectorShop();
+
+    $this->postJson('/v1/connector/products/sync', [
+        'currency' => 'IRR',
+        'products' => [
+            [
+                'external_id' => '42',
+                'sku' => 'SKU-001',
+                'name' => 'Perfume',
+                'price' => '1500000',
+                'brand' => 'Chanel',
+                'barcode' => '3145891164602',
+            ],
+        ],
+    ], connectorHeaders($shop, $plainKey))
+        ->assertOk()
+        ->assertJsonPath('synced', 1);
+
+    $product = Product::query()->whereBelongsTo($shop)->where('external_id', '42')->first();
+
+    expect($product)->not->toBeNull()
+        ->and($product->brand)->toBe('Chanel')
+        ->and($product->barcode)->toBe('3145891164602');
 });

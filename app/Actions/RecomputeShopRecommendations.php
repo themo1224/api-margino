@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Shop;
 use App\Support\Decimal;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 class RecomputeShopRecommendations
 {
@@ -15,14 +16,17 @@ class RecomputeShopRecommendations
 
     /**
      * Recompute recommendations for every product in the shop.
-     * With a cost profile: floor-aware engine.
+     * With a cost profile: floor-aware (+ rival-aware when snapshots are fresh).
      * Without: B4 stub if allowed, otherwise clear recommendation fields.
      */
     public function handle(Shop $shop): void
     {
-        $shop->loadMissing('costProfile');
+        $shop->loadMissing(['costProfile', 'plan']);
         $profile = $shop->costProfile;
-        $products = Product::query()->whereBelongsTo($shop)->get();
+        $products = Product::query()
+            ->whereBelongsTo($shop)
+            ->with(['rivalSnapshots' => fn ($q) => $q->orderByDesc('captured_at')])
+            ->get();
 
         if ($profile === null) {
             $this->applyWithoutProfile($products);
@@ -35,13 +39,14 @@ class RecomputeShopRecommendations
         $allocated = Decimal::div($profile->totalOverhead(), $divisor);
 
         foreach ($products as $product) {
+            $product->setRelation('shop', $shop);
             $fields = $this->compute->handle($product, $profile, $allocated);
             $product->fill($fields)->save();
         }
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Product>  $products
+     * @param  Collection<int, Product>  $products
      */
     private function applyWithoutProfile($products): void
     {
@@ -54,6 +59,8 @@ class RecomputeShopRecommendations
                     'recommended_price' => $product->price,
                     'below_floor' => false,
                     'floor_price' => null,
+                    'cannot_match_profitably' => false,
+                    'rivals_stale' => true,
                     'recommendation_updated_at' => $now,
                 ])->save();
 
@@ -64,6 +71,8 @@ class RecomputeShopRecommendations
                 'recommended_price' => null,
                 'below_floor' => false,
                 'floor_price' => null,
+                'cannot_match_profitably' => false,
+                'rivals_stale' => true,
                 'recommendation_updated_at' => null,
             ])->save();
         }

@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Jobs\DiscoverShopRivalsJob;
 use App\Models\Product;
 use App\Models\Shop;
 use Illuminate\Support\Carbon;
@@ -13,7 +14,7 @@ class SyncShopProducts
     ) {}
 
     /**
-     * @param  list<array{external_id: string, sku?: string|null, name: string, price: string}>  $products
+     * @param  list<array{external_id: string, sku?: string|null, name: string, price: string, brand?: string|null, barcode?: string|null}>  $products
      * @return array{synced: int, accepted: list<string>, rejected: list<array{external_id: string, code: string, message: string}>}
      */
     public function handle(Shop $shop, string $currency, array $products): array
@@ -36,18 +37,27 @@ class SyncShopProducts
 
             $now = Carbon::now();
 
+            $attributes = [
+                'sku' => $item['sku'] ?? null,
+                'name' => $item['name'],
+                'price' => $item['price'],
+                'currency' => $currency,
+                'last_synced_at' => $now,
+            ];
+
+            if (array_key_exists('brand', $item)) {
+                $attributes['brand'] = $item['brand'];
+            }
+            if (array_key_exists('barcode', $item)) {
+                $attributes['barcode'] = $item['barcode'];
+            }
+
             Product::query()->updateOrCreate(
                 [
                     'shop_id' => $shop->id,
                     'external_id' => $externalId,
                 ],
-                [
-                    'sku' => $item['sku'] ?? null,
-                    'name' => $item['name'],
-                    'price' => $item['price'],
-                    'currency' => $currency,
-                    'last_synced_at' => $now,
-                ],
+                $attributes,
             );
 
             $accepted[] = $externalId;
@@ -55,6 +65,7 @@ class SyncShopProducts
 
         if ($accepted !== []) {
             $this->recompute->handle($shop);
+            DiscoverShopRivalsJob::dispatch($shop->id);
         }
 
         return [

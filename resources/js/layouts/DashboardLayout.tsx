@@ -17,6 +17,7 @@ const nav = [
     { href: '/dashboard/api-keys', label: 'کلید API' },
     { href: '/dashboard/costs', label: 'هزینه‌ها' },
     { href: '/dashboard/products', label: 'محصولات' },
+    { href: '/dashboard/reports', label: 'گزارش‌ها' },
 ];
 
 export default function DashboardLayout({

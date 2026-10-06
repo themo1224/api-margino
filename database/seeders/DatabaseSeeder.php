@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -15,13 +14,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
-
-        if (! app()->isProduction()) {
-            $this->call(ConnectorSeeder::class);
+        if (app()->isProduction()) {
+            return;
         }
+
+        // Idempotent local demo: user + shop + key + costs + fake rivals.
+        $this->call(DashboardSeeder::class);
     }
 }

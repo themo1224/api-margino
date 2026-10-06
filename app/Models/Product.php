@@ -16,6 +16,8 @@ use Illuminate\Support\Carbon;
  * @property string $external_id
  * @property string|null $sku
  * @property string $name
+ * @property string|null $brand
+ * @property string|null $barcode
  * @property string $price
  * @property string $currency
  * @property string|null $recommended_price
@@ -27,6 +29,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $direct_cost
  * @property string|null $min_margin_percent
  * @property string|null $max_price
+ * @property bool $rivals_stale
+ * @property bool $cannot_match_profitably
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Shop $shop
@@ -36,6 +40,8 @@ use Illuminate\Support\Carbon;
     'external_id',
     'sku',
     'name',
+    'brand',
+    'barcode',
     'price',
     'currency',
     'recommended_price',
@@ -47,6 +53,8 @@ use Illuminate\Support\Carbon;
     'direct_cost',
     'min_margin_percent',
     'max_price',
+    'rivals_stale',
+    'cannot_match_profitably',
 ])]
 class Product extends Model
 {
@@ -60,6 +68,8 @@ class Product extends Model
     {
         return [
             'below_floor' => 'boolean',
+            'rivals_stale' => 'boolean',
+            'cannot_match_profitably' => 'boolean',
             'recommendation_updated_at' => 'datetime',
             'last_synced_at' => 'datetime',
         ];
@@ -79,5 +89,26 @@ class Product extends Model
     public function appliedPrices(): HasMany
     {
         return $this->hasMany(AppliedPrice::class);
+    }
+
+    /**
+     * @return HasMany<ProductRivalMatch, $this>
+     */
+    public function rivalMatches(): HasMany
+    {
+        return $this->hasMany(ProductRivalMatch::class);
+    }
+
+    /**
+     * @return HasMany<RivalSnapshot, $this>
+     */
+    public function rivalSnapshots(): HasMany
+    {
+        return $this->hasMany(RivalSnapshot::class);
+    }
+
+    public function latestRivalSnapshot(): ?RivalSnapshot
+    {
+        return $this->rivalSnapshots()->orderByDesc('captured_at')->first();
     }
 }

@@ -53,6 +53,23 @@ class ConnectorSeeder extends Seeder
             [
                 'label' => 'Starter',
                 'status' => PlanStatus::Active,
+                'rival_refresh_hours' => 24,
+                'max_rival_products' => 50,
+            ],
+        );
+
+        $plan->fill([
+            'rival_refresh_hours' => $plan->rival_refresh_hours ?: 24,
+            'max_rival_products' => $plan->max_rival_products ?: 50,
+        ])->save();
+
+        Plan::query()->firstOrCreate(
+            ['code' => 'plan_pro'],
+            [
+                'label' => 'Pro',
+                'status' => PlanStatus::Active,
+                'rival_refresh_hours' => 6,
+                'max_rival_products' => 500,
             ],
         );
 

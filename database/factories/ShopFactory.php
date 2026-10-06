@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\PricingMode;
+use App\Enums\PricingStrategy;
 use App\Enums\ShopStatus;
 use App\Models\Plan;
 use App\Models\Shop;
@@ -25,6 +27,12 @@ class ShopFactory extends Factory
             'name' => fake()->company(),
             'status' => ShopStatus::Active,
             'plan_id' => Plan::factory(),
+            'pricing_mode' => PricingMode::Alert,
+            'alerts_enabled' => true,
+            'rival_undercut_threshold_percent' => '5',
+            'cost_stale_days' => 30,
+            'pricing_strategy' => PricingStrategy::MatchCheapest,
+            'undercut_percent' => '1',
         ];
     }
 

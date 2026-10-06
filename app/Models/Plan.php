@@ -15,10 +15,12 @@ use Illuminate\Support\Carbon;
  * @property string $code
  * @property string $label
  * @property PlanStatus $status
+ * @property int $rival_refresh_hours
+ * @property int $max_rival_products
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['code', 'label', 'status'])]
+#[Fillable(['code', 'label', 'status', 'rival_refresh_hours', 'max_rival_products'])]
 class Plan extends Model
 {
     /** @use HasFactory<PlanFactory> */
@@ -31,6 +33,8 @@ class Plan extends Model
     {
         return [
             'status' => PlanStatus::class,
+            'rival_refresh_hours' => 'integer',
+            'max_rival_products' => 'integer',
         ];
     }
 

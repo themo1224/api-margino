@@ -1,22 +1,44 @@
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import type { FormEvent, ReactNode } from 'react';
 import { useState } from 'react';
 import DashboardLayout from '@/layouts/DashboardLayout';
+
+type RivalRow = {
+    source: string;
+    cheapest_price: string;
+    median_price: string | null;
+    competitor_count: number;
+    captured_at: string;
+    listing_title: string | null;
+};
+
+type PendingMatch = {
+    id: number;
+    source: string;
+    listing_title: string | null;
+    confidence: string;
+};
 
 type ProductRow = {
     id: number;
     external_id: string;
     sku: string | null;
     name: string;
+    brand: string | null;
+    barcode: string | null;
     price: string;
     currency: string;
     floor_price: string | null;
     recommended_price: string | null;
     below_floor: boolean;
+    rivals_stale: boolean;
+    cannot_match_profitably: boolean;
     direct_cost: string | null;
     min_margin_percent: string | null;
     max_price: string | null;
     last_synced_at: string | null;
+    rival: RivalRow | null;
+    pending_rival_match: PendingMatch | null;
 };
 
 type Props = {
@@ -106,8 +128,8 @@ export default function ProductsPage({
     return (
         <DashboardLayout title="محصولات همگام‌شده">
             <p className="mb-4 text-sm text-zinc-600">
-                قیمت فروشگاه، کف هزینه و توصیه — فقط خواندنی از سمت ووکامرس.
-                اعمال قیمت در وردپرس انجام می‌شود، نه اینجا.
+                قیمت فروشگاه، کف هزینه، رقبا و توصیه — اعمال قیمت فقط در
+                وردپرس.
             </p>
 
             {!hasCostProfile && (
@@ -123,7 +145,7 @@ export default function ProductsPage({
                 </p>
             ) : (
                 <div className="overflow-x-auto border border-zinc-200 bg-white">
-                    <table className="w-full min-w-[48rem] text-right text-sm">
+                    <table className="w-full min-w-[56rem] text-right text-sm">
                         <thead className="bg-zinc-100 text-zinc-600">
                             <tr>
                                 <th className="px-3 py-2 font-medium">نام</th>
@@ -131,6 +153,7 @@ export default function ProductsPage({
                                 <th className="px-3 py-2 font-medium">
                                     قیمت فروشگاه
                                 </th>
+                                <th className="px-3 py-2 font-medium">رقبا</th>
                                 <th className="px-3 py-2 font-medium">کف</th>
                                 <th className="px-3 py-2 font-medium">توصیه</th>
                                 <th className="px-3 py-2 font-medium">هزینه</th>
@@ -151,6 +174,16 @@ export default function ProductsPage({
                                                     زیر کف
                                                 </span>
                                             )}
+                                            {product.rivals_stale && (
+                                                <span className="mr-2 text-amber-700">
+                                                    رقیب کهنه/نیست
+                                                </span>
+                                            )}
+                                            {product.cannot_match_profitably && (
+                                                <span className="mr-2 text-red-700">
+                                                    رقابت زیان‌ده
+                                                </span>
+                                            )}
                                         </div>
                                     </td>
                                     <td className="px-3 py-2">
@@ -158,6 +191,55 @@ export default function ProductsPage({
                                     </td>
                                     <td className="px-3 py-2 font-mono text-xs">
                                         {product.price}
+                                    </td>
+                                    <td className="px-3 py-2 text-xs">
+                                        {product.rival ? (
+                                            <div className="space-y-1 font-mono">
+                                                <div>
+                                                    ارزان:{' '}
+                                                    {
+                                                        product.rival
+                                                            .cheapest_price
+                                                    }
+                                                </div>
+                                                <div>
+                                                    میانه:{' '}
+                                                    {product.rival
+                                                        .median_price ?? '—'}
+                                                </div>
+                                                <div>
+                                                    تعداد:{' '}
+                                                    {
+                                                        product.rival
+                                                            .competitor_count
+                                                    }
+                                                </div>
+                                                <div className="font-sans text-zinc-500">
+                                                    {product.rival.source}
+                                                </div>
+                                            </div>
+                                        ) : product.pending_rival_match ? (
+                                            <div className="space-y-2">
+                                                <p className="font-sans text-zinc-600">
+                                                    تأیید تطبیق:{' '}
+                                                    {product.pending_rival_match
+                                                        .listing_title ?? '—'}
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    className="bg-zinc-900 px-2 py-1 text-white"
+                                                    onClick={() =>
+                                                        router.post(
+                                                            `/dashboard/products/${product.id}/rivals/${product.pending_rival_match!.id}/confirm`,
+                                                        )
+                                                    }
+                                                >
+                                                    تأیید یک‌ضرب
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            '—'
+                                        )}
                                     </td>
                                     <td className="px-3 py-2 font-mono text-xs">
                                         {product.floor_price ?? '—'}

@@ -1,6 +1,9 @@
 <?php
 
+use App\Enums\PlanStatus;
+use App\Models\Plan;
 use App\Models\Product;
+use App\Models\Shop;
 use App\Models\ShopCostProfile;
 
 it('returns a floor-aware recommendation after sync when a cost profile exists', function () {
@@ -48,9 +51,18 @@ it('returns a floor-aware recommendation after sync when a cost profile exists',
         ->assertJsonPath('recommended_price', '1200000')
         ->assertJsonPath('currency', 'IRR')
         ->assertJsonPath('below_floor', false)
-        ->assertJsonPath('floor_price', '1200000');
+        ->assertJsonPath('floor_price', '1200000')
+        ->assertJsonMissingPath('cannot_match_profitably')
+        ->assertJsonMissingPath('rivals_stale');
 
-    expect($response->json('updated_at'))->toMatch('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/');
+    expect($response->json())->toHaveKeys([
+        'external_id',
+        'recommended_price',
+        'currency',
+        'below_floor',
+        'floor_price',
+        'updated_at',
+    ])->and($response->json('updated_at'))->toMatch('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/');
 });
 
 it('returns the stub recommendation after sync when no cost profile exists', function () {
@@ -126,4 +138,33 @@ it('returns 401 when the API key is missing', function () {
     $this->getJson('/v1/connector/products/42/recommendation')
         ->assertUnauthorized()
         ->assertJsonPath('error.code', 'invalid_api_key');
+});
+
+it('returns 403 when the plan is inactive', function () {
+    $plan = Plan::factory()->state(['status' => PlanStatus::Inactive])->create();
+    [$shop, $plainKey] = connectorShop(fn () => Shop::factory()->for($plan)->create());
+    Product::factory()->for($shop)->create([
+        'external_id' => '42',
+        'recommended_price' => '1000',
+        'recommendation_updated_at' => now(),
+    ]);
+
+    $this->getJson('/v1/connector/products/42/recommendation', connectorHeaders($shop, $plainKey))
+        ->assertForbidden()
+        ->assertJsonPath('error.code', 'plan_inactive');
+});
+
+it('returns 403 when the shop is inactive', function () {
+    [$shop, $plainKey] = connectorShop(
+        fn () => Shop::factory()->inactive()->create(),
+    );
+    Product::factory()->for($shop)->create([
+        'external_id' => '42',
+        'recommended_price' => '1000',
+        'recommendation_updated_at' => now(),
+    ]);
+
+    $this->getJson('/v1/connector/products/42/recommendation', connectorHeaders($shop, $plainKey))
+        ->assertForbidden()
+        ->assertJsonPath('error.code', 'plan_inactive');
 });

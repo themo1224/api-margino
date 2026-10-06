@@ -27,6 +27,8 @@ class SyncProductsRequest extends FormRequest
             'products.*.sku' => ['nullable', 'string', 'max:191'],
             'products.*.name' => ['required', 'string', 'max:255'],
             'products.*.price' => ['required', 'string'],
+            'products.*.brand' => ['nullable', 'string', 'max:191'],
+            'products.*.barcode' => ['nullable', 'string', 'max:64'],
         ];
     }
 
@@ -35,9 +37,11 @@ class SyncProductsRequest extends FormRequest
      */
     public function after(): array
     {
+        $allowedProductKeys = ['external_id', 'sku', 'name', 'price', 'brand', 'barcode'];
+
         return [
             RejectsUnknownJsonKeys::of($this, ['currency', 'products']),
-            function (Validator $validator): void {
+            function (Validator $validator) use ($allowedProductKeys): void {
                 $products = $this->input('products');
 
                 if (! is_array($products)) {
@@ -49,7 +53,7 @@ class SyncProductsRequest extends FormRequest
                         continue;
                     }
 
-                    foreach (array_diff(array_keys($product), ['external_id', 'sku', 'name', 'price']) as $key) {
+                    foreach (array_diff(array_keys($product), $allowedProductKeys) as $key) {
                         $validator->errors()->add(
                             'products.'.$index.'.'.$key,
                             'The '.$key.' field is not allowed.',

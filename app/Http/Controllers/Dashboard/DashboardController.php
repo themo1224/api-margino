@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Actions\EnsureUserShop;
+use App\Enums\LicenseStatus;
 use App\Http\Controllers\Controller;
 use App\Models\ApiKey;
 use Illuminate\Http\Request;
@@ -24,6 +25,11 @@ class DashboardController extends Controller
         $productCount = $shop->products()->count();
         $hasCostProfile = $shop->costProfile()->exists();
 
+        $license = $shop->licenses()
+            ->where('status', LicenseStatus::Active)
+            ->orderByDesc('ends_at')
+            ->first();
+
         return Inertia::render('dashboard/index', [
             'shop' => [
                 'id' => $shop->public_id,
@@ -33,6 +39,11 @@ class DashboardController extends Controller
                 'code' => $shop->plan->code,
                 'label' => $shop->plan->label,
                 'status' => $shop->plan->status->value,
+            ],
+            'license' => $license === null ? null : [
+                'source' => $license->source->value,
+                'status' => $license->isCurrentlyActive() ? 'active' : 'expired',
+                'ends_at' => $license->ends_at?->toIso8601String(),
             ],
             'empty' => [
                 'no_key' => ! $hasActiveKey,

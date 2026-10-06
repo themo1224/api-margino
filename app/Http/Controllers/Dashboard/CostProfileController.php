@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Dashboard;
 
 use App\Actions\EnsureUserShop;
+use App\Actions\EvaluateShopAlerts;
 use App\Actions\RecomputeShopRecommendations;
 use App\Http\Controllers\Controller;
 use App\Models\ShopCostProfile;
@@ -36,6 +37,7 @@ class CostProfileController extends Controller
         Request $request,
         EnsureUserShop $ensureUserShop,
         RecomputeShopRecommendations $recompute,
+        EvaluateShopAlerts $evaluateAlerts,
     ): RedirectResponse {
         $validated = $request->validate([
             'staff_cost' => ['required', 'string', 'regex:/^\d+(\.\d+)?$/'],
@@ -58,6 +60,8 @@ class CostProfileController extends Controller
 
             $recompute->handle($shop->fresh(['costProfile']));
         });
+
+        $evaluateAlerts->handle($shop->fresh(['costProfile', 'user', 'products']));
 
         return redirect()
             ->route('dashboard.costs')

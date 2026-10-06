@@ -35,6 +35,11 @@ final class Decimal
         return self::trim(bcadd(self::normalize($a), self::normalize($b), self::SCALE));
     }
 
+    public static function sub(string $a, string $b): string
+    {
+        return self::trim(bcsub(self::normalize($a), self::normalize($b), self::SCALE));
+    }
+
     public static function mul(string $a, string $b): string
     {
         return self::trim(bcmul(self::normalize($a), self::normalize($b), self::SCALE));
@@ -61,5 +66,10 @@ final class Decimal
     public static function min(string $a, string $b): string
     {
         return self::compare($a, $b) <= 0 ? self::trim(self::normalize($a)) : self::trim(self::normalize($b));
+    }
+
+    public static function max(string $a, string $b): string
+    {
+        return self::compare($a, $b) >= 0 ? self::trim(self::normalize($a)) : self::trim(self::normalize($b));
     }
 }

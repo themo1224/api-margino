@@ -10,6 +10,12 @@ it('shows the register page', function () {
         ->assertInertia(fn ($page) => $page->component('auth/register'));
 });
 
+it('shows the login page', function () {
+    $this->get(route('login'))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page->component('auth/login'));
+});
+
 it('registers a seller with one starter shop and logs them in', function () {
     $response = $this->post(route('register'), [
         'name' => 'علی فروشنده',
@@ -30,6 +36,49 @@ it('registers a seller with one starter shop and logs them in', function () {
         ->and($user->shop->name)->toBe('فروشگاه تست')
         ->and($user->shop->plan->code)->toBe('plan_starter')
         ->and($user->shop->plan->label)->toBe('Starter');
+});
+
+it('rejects registration with duplicate email', function () {
+    User::factory()->create(['email' => 'taken@example.com']);
+
+    $this->from(route('register'))
+        ->post(route('register'), [
+            'name' => 'فروشنده',
+            'email' => 'taken@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'shop_name' => 'فروشگاه',
+        ])
+        ->assertRedirect(route('register'))
+        ->assertSessionHasErrors('email');
+
+    $this->assertGuest();
+});
+
+it('rejects registration with invalid password', function () {
+    $this->from(route('register'))
+        ->post(route('register'), [
+            'name' => 'فروشنده',
+            'email' => 'new@example.com',
+            'password' => 'short',
+            'password_confirmation' => 'short',
+            'shop_name' => 'فروشگاه',
+        ])
+        ->assertRedirect(route('register'))
+        ->assertSessionHasErrors('password');
+
+    $this->from(route('register'))
+        ->post(route('register'), [
+            'name' => 'فروشنده',
+            'email' => 'new2@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'different123',
+            'shop_name' => 'فروشگاه',
+        ])
+        ->assertRedirect(route('register'))
+        ->assertSessionHasErrors('password');
+
+    $this->assertGuest();
 });
 
 it('logs a seller in and out', function () {
@@ -53,7 +102,7 @@ it('logs a seller in and out', function () {
 });
 
 it('rejects invalid login credentials', function () {
-    $user = User::factory()->create([
+    User::factory()->create([
         'email' => 'bad@example.com',
         'password' => Hash::make('password123'),
     ]);
@@ -69,7 +118,12 @@ it('rejects invalid login credentials', function () {
     $this->assertGuest();
 });
 
-it('redirects guests away from the dashboard', function () {
-    $this->get(route('dashboard'))
+it('redirects guests away from protected dashboard routes', function (string $routeName) {
+    $this->get(route($routeName))
         ->assertRedirect(route('login'));
-});
+})->with([
+    'dashboard' => 'dashboard',
+    'products' => 'dashboard.products',
+    'costs' => 'dashboard.costs',
+    'api-keys' => 'dashboard.api-keys',
+]);
