@@ -1,12 +1,20 @@
 <?php
 
+use App\Http\Controllers\Seller\ApplyProductPriceController;
 use App\Http\Controllers\Seller\AuthController;
+use App\Http\Controllers\Seller\BatchApplyPriceController;
+use App\Http\Controllers\Seller\BatchRefreshRivalsController;
 use App\Http\Controllers\Seller\ConfirmRivalMatchController;
 use App\Http\Controllers\Seller\PricingAlertsController;
 use App\Http\Controllers\Seller\PricingApiKeysController;
+use App\Http\Controllers\Seller\PricingCostsController;
 use App\Http\Controllers\Seller\PricingOverviewController;
+use App\Http\Controllers\Seller\PricingPlanController;
 use App\Http\Controllers\Seller\PricingProductsController;
 use App\Http\Controllers\Seller\PricingReportsController;
+use App\Http\Controllers\Seller\ProductDetailController;
+use App\Http\Controllers\Seller\RefreshProductRivalsController;
+use App\Http\Controllers\Seller\UnlinkProductRivalController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/register', [AuthController::class, 'register'])->name('seller.auth.register');
@@ -18,8 +26,32 @@ Route::middleware('auth:sanctum')->group(function (): void {
 
     Route::get('/pricing/overview', PricingOverviewController::class)->name('seller.pricing.overview');
     Route::get('/pricing/products', PricingProductsController::class)->name('seller.pricing.products');
+
+    // Batch actions (registered before parameter patterns)
+    Route::post('/pricing/products/batch-apply-price', BatchApplyPriceController::class)
+        ->name('seller.pricing.products.batch-apply-price');
+    Route::post('/pricing/products/batch-refresh', BatchRefreshRivalsController::class)
+        ->name('seller.pricing.products.batch-refresh');
+
+    // Single product actions
+    Route::get('/pricing/products/{product}', ProductDetailController::class)
+        ->name('seller.pricing.products.detail');
+    Route::post('/pricing/products/{product}/apply-price', ApplyProductPriceController::class)
+        ->name('seller.pricing.products.apply-price');
+    Route::post('/pricing/products/{product}/refresh-rivals', RefreshProductRivalsController::class)
+        ->name('seller.pricing.products.refresh-rivals');
+    Route::post('/pricing/products/{product}/unlink-rival', UnlinkProductRivalController::class)
+        ->name('seller.pricing.products.unlink-rival');
     Route::post('/pricing/products/{product}/rivals/{match}/confirm', ConfirmRivalMatchController::class)
         ->name('seller.pricing.products.rivals.confirm');
+
+    // Costs
+    Route::get('/pricing/costs', [PricingCostsController::class, 'show'])->name('seller.pricing.costs.show');
+    Route::put('/pricing/costs', [PricingCostsController::class, 'update'])->name('seller.pricing.costs.update');
+
+    // Plan & quota limits
+    Route::get('/pricing/plan', [PricingPlanController::class, 'show'])->name('seller.pricing.plan.show');
+    Route::post('/pricing/plan/upgrade', [PricingPlanController::class, 'upgrade'])->name('seller.pricing.plan.upgrade');
 
     Route::get('/pricing/reports', PricingReportsController::class)->name('seller.pricing.reports');
     Route::get('/pricing/alerts', [PricingAlertsController::class, 'show'])->name('seller.pricing.alerts.show');
@@ -31,3 +63,4 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->whereNumber('id')
         ->name('seller.pricing.api-keys.revoke');
 });
+
