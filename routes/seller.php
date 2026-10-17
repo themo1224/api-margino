@@ -7,6 +7,7 @@ use App\Http\Controllers\Seller\BatchRefreshRivalsController;
 use App\Http\Controllers\Seller\ConfirmRivalMatchController;
 use App\Http\Controllers\Seller\PricingAlertsController;
 use App\Http\Controllers\Seller\PricingApiKeysController;
+use App\Http\Controllers\Seller\PricingAutoApplyController;
 use App\Http\Controllers\Seller\PricingCostsController;
 use App\Http\Controllers\Seller\PricingOverviewController;
 use App\Http\Controllers\Seller\PricingPlanController;
@@ -56,6 +57,13 @@ Route::middleware('auth:sanctum')->group(function (): void {
     Route::get('/pricing/reports', PricingReportsController::class)->name('seller.pricing.reports');
     Route::get('/pricing/alerts', [PricingAlertsController::class, 'show'])->name('seller.pricing.alerts.show');
     Route::put('/pricing/alerts', [PricingAlertsController::class, 'update'])->name('seller.pricing.alerts.update');
+
+    // Auto-Apply (Pro Plan)
+    Route::get('/pricing/auto-apply', [PricingAutoApplyController::class, 'show'])->name('seller.pricing.auto-apply.show');
+    Route::put('/pricing/auto-apply', [PricingAutoApplyController::class, 'update'])->name('seller.pricing.auto-apply.update');
+    Route::post('/pricing/auto-apply/run-now', [PricingAutoApplyController::class, 'runNow'])->name('seller.pricing.auto-apply.run-now');
+    Route::post('/pricing/products/{product}/toggle-auto-apply', [PricingAutoApplyController::class, 'toggleProduct'])
+        ->name('seller.pricing.products.toggle-auto-apply');
 
     Route::get('/pricing/api-keys', [PricingApiKeysController::class, 'index'])->name('seller.pricing.api-keys.index');
     Route::post('/pricing/api-keys', [PricingApiKeysController::class, 'store'])->name('seller.pricing.api-keys.store');

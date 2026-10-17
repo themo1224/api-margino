@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Connector\AcknowledgeAppliedPriceController;
+use App\Http\Controllers\Connector\PendingPriceSyncController;
 use App\Http\Controllers\Connector\ProductRecommendationController;
 use App\Http\Controllers\Connector\SyncProductsController;
 use App\Http\Controllers\Connector\ValidateConnectorController;
@@ -16,4 +17,8 @@ Route::middleware(['connector.key', 'throttle:connector'])
             ->name('products.recommendation');
         Route::post('/products/{external_id}/applied', AcknowledgeAppliedPriceController::class)
             ->name('products.applied');
+
+        // WooCommerce Sync-Back routes
+        Route::get('/prices/pending', [PendingPriceSyncController::class, 'index'])->name('prices.pending');
+        Route::post('/prices/ack', [PendingPriceSyncController::class, 'ack'])->name('prices.ack');
     });

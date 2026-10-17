@@ -35,6 +35,8 @@ class ApplyProductPriceController extends Controller
         $product->update([
             'price' => $newPrice,
             'last_applied_price' => $newPrice,
+            'pending_price_sync' => true,
+            'pending_price' => $newPrice,
         ]);
 
         AppliedPrice::create([

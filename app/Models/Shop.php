@@ -30,6 +30,11 @@ use Illuminate\Support\Str;
  * @property int $cost_stale_days
  * @property PricingStrategy $pricing_strategy
  * @property string $undercut_percent
+ * @property bool $auto_apply_enabled
+ * @property string $auto_apply_max_drop_percent
+ * @property bool $auto_apply_only_fresh_rivals
+ * @property bool $auto_apply_notify_daily
+ * @property Carbon|null $last_auto_apply_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User|null $user
@@ -43,6 +48,11 @@ use Illuminate\Support\Str;
     'status',
     'plan_id',
     'pricing_mode',
+    'auto_apply_enabled',
+    'auto_apply_max_drop_percent',
+    'auto_apply_only_fresh_rivals',
+    'auto_apply_notify_daily',
+    'last_auto_apply_at',
     'alerts_enabled',
     'alert_prefs',
     'rival_undercut_threshold_percent',
@@ -64,10 +74,26 @@ class Shop extends Model
             'status' => ShopStatus::class,
             'pricing_mode' => PricingMode::class,
             'pricing_strategy' => PricingStrategy::class,
+            'auto_apply_enabled' => 'boolean',
+            'auto_apply_only_fresh_rivals' => 'boolean',
+            'auto_apply_notify_daily' => 'boolean',
+            'last_auto_apply_at' => 'datetime',
             'alerts_enabled' => 'boolean',
             'alert_prefs' => 'array',
             'cost_stale_days' => 'integer',
         ];
+    }
+
+    public function isAutoApplyAllowed(): bool
+    {
+        $this->loadMissing(['plan', 'licenses']);
+        $planCode = $this->plan?->code ?? 'starter';
+        if (! in_array($planCode, ['pro', 'business'], true)) {
+            return false;
+        }
+
+        $activeLicense = $this->licenses->first(fn ($lic) => $lic->isCurrentlyActive());
+        return $activeLicense !== null;
     }
 
     public function wantsAlert(AlertType $type): bool

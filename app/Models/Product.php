@@ -31,6 +31,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $max_price
  * @property bool $rivals_stale
  * @property bool $cannot_match_profitably
+ * @property bool $auto_apply_excluded
+ * @property Carbon|null $last_auto_applied_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Shop $shop
@@ -55,6 +57,10 @@ use Illuminate\Support\Carbon;
     'max_price',
     'rivals_stale',
     'cannot_match_profitably',
+    'pending_price_sync',
+    'pending_price',
+    'auto_apply_excluded',
+    'last_auto_applied_at',
 ])]
 class Product extends Model
 {
@@ -70,6 +76,9 @@ class Product extends Model
             'below_floor' => 'boolean',
             'rivals_stale' => 'boolean',
             'cannot_match_profitably' => 'boolean',
+            'pending_price_sync' => 'boolean',
+            'auto_apply_excluded' => 'boolean',
+            'last_auto_applied_at' => 'datetime',
             'recommendation_updated_at' => 'datetime',
             'last_synced_at' => 'datetime',
         ];

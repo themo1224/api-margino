@@ -63,6 +63,13 @@ final class SellerProductRivalMapper
             'vsStorePct' => $vsStorePct,
             'rivalStatus' => self::rivalStatus($product, $snapshot, $pending),
             'lastRivalAt' => $snapshot?->captured_at?->toIso8601String(),
+            'autoApplyExcluded' => (bool) $product->auto_apply_excluded,
+            'autoApplyEligible' => ! $product->auto_apply_excluded
+                && ! $product->below_floor
+                && ! $product->cannot_match_profitably
+                && ! $product->rivals_stale
+                && $product->recommended_price !== null,
+            'lastAutoAppliedAt' => $product->last_auto_applied_at?->toIso8601String(),
             'pendingRivalMatch' => $pending === null ? null : [
                 'id' => (string) $pending->id,
                 'source' => $pending->source->value,

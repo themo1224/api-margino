@@ -13,3 +13,4 @@ Artisan::command('inspire', function () {
 // Rival refresh + alert evaluation within ~1 hour of relevant change.
 Schedule::job(new DispatchDueRivalRefreshesJob)->hourly();
 Schedule::job(new EvaluateAllShopAlertsJob)->hourly();
+Schedule::command('pricing:auto-apply-cycle')->hourly();
